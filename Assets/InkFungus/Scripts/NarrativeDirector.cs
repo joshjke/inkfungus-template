@@ -187,7 +187,6 @@ namespace InkFungus
                 Type inkVariableType = inkVariableNewValue.GetType();
                 try
                 {
-                    Debug.Log(inkVariableName + "=" + inkVariableNewValue + " (Ink->Fungus)");
                     if (inkVariableType == typeof(int))
                     {
                         if (fungusVariableType == typeof(bool)) // converts int to bool
@@ -285,7 +284,6 @@ namespace InkFungus
                     }
                     else
                     {
-                        Debug.Log("Registering list " + listVariableParts[0]);
                         story.ObserveVariable(listVariableParts[0], SyncListToFungus);
                     }
                 }
@@ -308,7 +306,6 @@ namespace InkFungus
             {
                 if (Time.time >= resumeTime)
                 {
-                    Debug.Log("Timer triggered proceeding");
                     Resume();
                 }
             }
@@ -324,14 +321,6 @@ namespace InkFungus
         {
             pause = true;
             resumeTime = Time.time + pauseTime;
-            if (resumeTime == float.PositiveInfinity)
-            {
-                Debug.Log("Idling until further notice");
-            }
-            else
-            {
-                Debug.Log("Idling for " + pauseTime + "s");
-            }
             BroadcastToFungus(textPauseMessage);
         }
 
@@ -374,7 +363,6 @@ namespace InkFungus
                     }
                 }
                 string line = story.currentText;
-                Debug.Log("»" + line);
                 ProcessTags(story.currentTags);
 
                 if (immediateStop)
@@ -441,10 +429,6 @@ namespace InkFungus
                     {
                         nextStep();
                     }
-                    else
-                    {
-                        Debug.Log("Discarding orphan action associated with expired narration handle " + originalNarrationHandle);
-                    }
                 };
                 bool fadeWhenDone = story.canContinue || flags["hide"].Get();
                 StartCoroutine(sayDialogToUse.DoSay(line, true, !flags["auto"].Get(), fadeWhenDone, true, true, null, onSayComplete));
@@ -455,7 +439,6 @@ namespace InkFungus
                 List<Choice> choices = story.currentChoices;
                 if (choices.Count == 0)
                 {
-                    Debug.LogWarning("Story reached a stop");
                     BroadcastToFungus(textStopMessage);
                 }
                 else
@@ -470,7 +453,6 @@ namespace InkFungus
                     {
                         int choiceIndex = choice.index;
                         string line = choice.text;
-                        Debug.Log(choiceIndex + "»" + line);
                         Block callbackBlock = gatewayFlowchart.FindBlock("Choose " + choiceIndex);
                         if (callbackBlock == null)
                         {
@@ -500,12 +482,10 @@ namespace InkFungus
             string fullMessage = (prefixForAllMessages + message).TrimEnd();
             if (flowchart == null)
             {
-                Debug.Log("Message to all flowcharts: «" + fullMessage + "»");
                 Flowchart.BroadcastFungusMessage(fullMessage);
             }
             else
             {
-                Debug.Log("Message to flowchart " + flowchart.name + ": «" + fullMessage + "»");
                 flowchart.SendFungusMessage(fullMessage);
             }
         }
@@ -516,7 +496,6 @@ namespace InkFungus
         {
             foreach (string tag in tags)
             {
-                Debug.Log("Processing tag: " + tag);
                 string[] t = tag.Trim().Split(TagSeparators, 2);
                 string command = t[0].ToLowerInvariant();
                 bool defaultArgument;
@@ -610,12 +589,10 @@ namespace InkFungus
 
         public void OnOptionChosen(int choiceIndex)
         {
-            Debug.Log("Option #" + choiceIndex + " chosen");
             story.ChooseChoiceIndex(choiceIndex);
             if (!flags["echo"].Get() && story.canContinue)
             {
                 string discardedLine = story.Continue();
-                Debug.Log("X»" + discardedLine);
                 AutoSave();
             }
             Narrate();
@@ -623,10 +600,8 @@ namespace InkFungus
 
         public void OnVariablesChanged(Flowchart origin)
         {
-            Debug.Log("OnVariablesChange origin=" + origin.name);
             if (beforeFirstSync)
             {
-                Debug.Log("Still initializing, Fungus->Ink sync request ignored");
                 return;
             }
             List<Variable> affectedFungusVariables;
@@ -653,25 +628,21 @@ namespace InkFungus
                     if (fungusVariableType == typeof(int))
                     {
                         int intValue = (fungusVariable as IntegerVariable).Value;
-                        Debug.Log(fungusVariable.Key + "=" + intValue + " (Fungus->Ink)");
                         story.variablesState[fungusVariable.Key] = intValue;
                     }
                     else if (fungusVariableType == typeof(string))
                     {
                         string stringValue = (fungusVariable as StringVariable).Value;
-                        Debug.Log(fungusVariable.Key + "=" + stringValue + " (Fungus->Ink)");
                         story.variablesState[fungusVariable.Key] = stringValue;
                     }
                     else if (fungusVariableType == typeof(float))
                     {
                         float floatValue = (fungusVariable as FloatVariable).Value;
-                        Debug.Log(fungusVariable.Key + "=" + floatValue + " (Fungus->Ink)");
                         story.variablesState[fungusVariable.Key] = floatValue;
                     }
                     else if (fungusVariableType == typeof(bool))
                     {
                         bool boolValue = (fungusVariable as BooleanVariable).Value;
-                        Debug.Log(fungusVariable.Key + "=" + boolValue + " (Fungus->Ink)");
                         string[] listVariableParts = SplitFungusVariableName(fungusVariable.Key);
                         if (listVariableParts.Length <= 1)
                         {
@@ -693,7 +664,6 @@ namespace InkFungus
                                     if (!inkList.ContainsItemNamed(listItemName))
                                     {
                                         inkList.AddItem(listItemName);
-                                        Debug.Log(listItemName + " added in Ink list " + listName);
                                     }
                                 }
                                 else
@@ -709,7 +679,6 @@ namespace InkFungus
                                     foreach (InkListItem inkListItem in toRemove)
                                     {
                                         inkList.Remove(inkListItem);
-                                        Debug.Log(inkListItem.fullName + " removed from Ink list " + listName);
                                     }
                                 }
                             }
@@ -786,7 +755,6 @@ namespace InkFungus
                 Debug.LogError("Save failed: origin and destination slots are the same (" + originSlot + ")");
                 return;
             }
-            Debug.Log("Save from " + GetSavePath(originSlot) + " to " + GetSavePath(destinationSlot));
             BroadcastToFungus(saveMessage);
             BroadcastToFungus(saveMessage + " " + destinationSlot);
             try
@@ -821,7 +789,6 @@ namespace InkFungus
             {
                 knotStitch = knotStitchEtc[0] + '.' + knotStitchEtc[1]; // knot.stitch
             }
-            Debug.Log("Current knot.stitch = " + knotStitch);
             if (knotStitch != lastKnotStitch)
             {
                 lastKnotStitch = knotStitch;
@@ -865,7 +832,6 @@ namespace InkFungus
         public void AutoSave()
         {
             string path = GetSavePath(AutoSaveSlot);
-            Debug.Log("Autosave to " + path);
             try
             {
                 foreach (string flagName in flags.Keys)
@@ -893,7 +859,6 @@ namespace InkFungus
 
         private void Load(string slot, bool andContinue)
         {
-            Debug.Log("Load " + GetSavePath(slot));
             loading = !andContinue;
             BroadcastToFungus(loadMessage);
             BroadcastToFungus(loadMessage + " " + slot);
