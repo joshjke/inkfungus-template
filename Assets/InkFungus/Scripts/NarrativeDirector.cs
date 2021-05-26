@@ -40,6 +40,7 @@ namespace InkFungus
         @"^(?<character>[\w\- ]*)(\?(?<portrait>[\w\- ]+))? ""(?<text>((""[^""]*"")|(.))+?)""?[ ]*$";
         public Flowchart gatewayFlowchart;
         public float defaultChoiceTime = 5f;
+        public Flowchart mainFlowchart;
 
         private Story story;
         private Regex compiledDialogRegex;
@@ -510,6 +511,27 @@ namespace InkFungus
             }
         }
 
+        private void BroadcastToFungus(string message, string arguments, Flowchart flowchart = null)
+        {
+            string argumentsKey = "arguments";
+            string fullMessage = (prefixForAllMessages + message).TrimEnd();
+            if (flowchart == null)
+            {
+                if (arguments != null)
+                    Debug.LogError("Main flowchart is NOT set in the inspector. Set it in order to send additional message arguments");
+
+                Debug.Log("Message to all flowcharts: «" + fullMessage + "»");
+                Flowchart.BroadcastFungusMessage(fullMessage);
+            }
+            else
+            {
+                // send additional words as a single string variable through the Fungus flowchart
+                flowchart.SetStringVariable(argumentsKey, arguments);
+                Debug.Log("Message to flowchart " + flowchart.name + ": «" + fullMessage + "»");
+                flowchart.SendFungusMessage(fullMessage);
+            }
+        }
+
         static readonly char[] TagSeparators = { ' ', '\t' };
 
         private void ProcessTags(List<string> tags)
@@ -586,7 +608,7 @@ namespace InkFungus
                         break;
 
                     default:
-                        BroadcastToFungus(command + " " + argument); // simple as that
+                        BroadcastToFungus(command, argument, mainFlowchart);
                         break;
                 }
             }
